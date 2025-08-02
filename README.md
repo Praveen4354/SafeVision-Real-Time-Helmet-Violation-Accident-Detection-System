@@ -1,16 +1,16 @@
 # SafeVision: Real-Time Helmet Violation & Accident Detection System
 
-SafeVision is a Streamlit-based application designed to enhance road safety by detecting helmet violations and accidents in real-time using computer vision and machine learning. It leverages YOLOv8 for object detection, PaddleOCR for number plate recognition, and a GAN-based discriminator for plate authenticity verification. The system sends SMS alerts to vehicle owners or emergency contacts via Twilio and provides voice alerts for detection summaries.
+SafeVision is a Streamlit-based web application designed to enhance road safety by detecting helmet violations and accidents in real-time using computer vision and machine learning. It leverages YOLOv8 for object detection, PaddleOCR for number plate recognition, and a GAN-based discriminator for plate authenticity verification. The system sends SMS alerts to vehicle owners or emergency contacts via Twilio and provides voice alerts for detection summaries using `pyttsx3`.
 
 ## Features
 - **Helmet Violation Detection**:
-  - Detects riders, helmets, and number plates in video streams using YOLOv8 (`best.pt`).
+  - Detects riders, helmets, and number plates in video streams using YOLOv8.
   - Identifies riders without helmets and extracts vehicle number plates using PaddleOCR.
-  - Verifies number plate authenticity using a GAN-based discriminator (`discriminator_epoch_0.pth`).
-  - Sends SMS alerts to vehicle owners with a payment link for violations, using Twilio.
+  - Verifies number plate authenticity using a GAN-based discriminator.
+  - Sends SMS alerts to vehicle owners with a payment link for violations via Twilio.
   - Provides voice alerts summarizing detection results using `pyttsx3`.
 - **Accident Detection**:
-  - Detects accidents in video streams using YOLOv8 (`bestw.pt`).
+  - Detects accidents in video streams using YOLOv8.
   - Sends SMS alerts to emergency contacts via Twilio when accidents are detected.
 - **Streamlit Interface**:
   - User-friendly web interface for uploading videos and viewing detection results.
@@ -27,10 +27,6 @@ SafeVision/
 ├── image_to_text.py          # OCR for number plate recognition
 ├── data/
 │   └── vehicle_database.csv  # Database of vehicle numbers and phone numbers
-├── models/
-│   ├── best.pt               # YOLOv8 model for helmet detection
-│   ├── bestw.pt              # YOLOv8 model for accident detection
-│   └── discriminator_epoch_0.pth  # GAN Discriminator for plate validation
 ├── requirements.txt          # Python dependencies
 ├── README.md                # Project documentation
 └── accident.jpg             # Static image for accident detection (optional)
@@ -65,14 +61,31 @@ SafeVision/
      - Linux: `sudo apt-get install tesseract-ocr`
      - macOS: `brew install tesseract`
 
-5. **Prepare Model and Data Files**:
-   - Place `best.pt`, `bestw.pt`, and `discriminator_epoch_0.pth` in the `models/` directory.
-   - Place `vehicle_database.csv` in the `data/` directory with columns `VehicleNumber` and `PhoneNumber`.
-   - (Optional) Place `accident.jpg` in the root directory if required by `accident_detection.py`.
+5. **Provide Model Files**:
+   - You need to provide the following model files and place them in a `models/` directory:
+     - `best.pt`: YOLOv8 model for helmet violation detection.
+     - `bestw.pt`: YOLOv8 model for accident detection.
+     - `discriminator_epoch_0.pth`: GAN Discriminator for number plate validation.
+   - These models are not included due to their large size. Obtain or train compatible YOLOv8 and GAN models and place them in `SafeVision/models/`.
 
-6. **Set Up Twilio**:
+6. **Prepare Data File**:
+   - Place `vehicle_database.csv` in the `data/` directory with columns `VehicleNumber` and `PhoneNumber` (e.g., `+91xxxxxxxxxx` format).
+
+7. **Set Up Twilio**:
    - Update `helmet_detection.py` and `accident_detection.py` with your Twilio `account_sid`, `auth_token`, and `twilio_phone_number`.
-   - Ensure valid phone numbers in `vehicle_database.csv` (e.g., `+91xxxxxxxxxx` format).
+   - Alternatively, store credentials in a `.env` file (add `.env` to `.gitignore`):
+     ```plaintext
+     TWILIO_ACCOUNT_SID=your_account_sid
+     TWILIO_AUTH_TOKEN=your_auth_token
+     TWILIO_PHONE_NUMBER=your_twilio_phone_number
+     ```
+   - Update scripts to use environment variables:
+     ```python
+     import os
+     account_sid = os.getenv("TWILIO_ACCOUNT_SID")
+     auth_token = os.getenv("TWILIO_AUTH_TOKEN")
+     twilio_phone_number = os.getenv("TWILIO_PHONE_NUMBER")
+     ```
 
 ## Usage
 1. **Run the Application**:
@@ -114,18 +127,19 @@ pyttsx3
 - **accident_detection.py**: Detects accidents and sends emergency SMS alerts.
 - **image_to_text.py**: Provides OCR functionality for number plate recognition using PaddleOCR.
 - **vehicle_database.csv**: Maps vehicle numbers to phone numbers for SMS alerts.
-- **best.pt**: YOLOv8 model for helmet violation detection.
-- **bestw.pt**: YOLOv8 model for accident detection.
-- **discriminator_epoch_0.pth**: GAN Discriminator model for number plate validation.
 - **accident.jpg**: Static image for accident detection results (optional, may need dynamic generation).
 
 ## Notes
-- **Hardware Compatibility**: The app supports CUDA, CPU, or MPS (Apple Silicon). Ensure `device` in scripts matches your hardware.
-- **Twilio Configuration**: Replace placeholder Twilio credentials in `helmet_detection.py` and `accident_detection.py` with your own.
-- **Model Files**: Ensure `best.pt`, `bestw.pt`, and `discriminator_epoch_0.pth` are available in `models/`.
+- **Model Files**: You must provide `best.pt`, `bestw.pt`, and `discriminator_epoch_0.pth` in `models/`. These are not included due to their size. Ensure compatibility with YOLOv8 and the GAN Discriminator architecture in `helmet_detection.py`.
+- **Hardware Compatibility**: The app supports CUDA, CPU, or MPS (Apple Silicon). Ensure the `device` in scripts matches your hardware.
+- **Twilio Configuration**: Replace placeholder Twilio credentials in `helmet_detection.py` and `accident_detection.py` with your own, or use environment variables for security.
 - **Database**: `vehicle_database.csv` must have `VehicleNumber` and `PhoneNumber` columns in the correct format.
-- **Accident Image**: `accident_detection.py` references `accident.jpg`. Either include it or modify the script to generate it dynamically.
-- **Bug in Alternative Script**: If using `appmain.py` (not included here), fix the SMS alert bug by replacing `vehicle_number` with `plate`.
+- **Accident Image**: `accident_detection.py` references `accident.jpg`. Either include it or modify the script to generate it dynamically:
+  ```python
+  if accident_detected:
+      cv2.imwrite(os.path.join(temp_dir.name, "accident.jpg"), accident_frame)
+      st.image(os.path.join(temp_dir.name, "accident.jpg"), caption="Accident Result")
+  ```
 
 ## Contributing
 Contributions are welcome! Please submit a pull request or open an issue for bugs, features, or improvements.
