@@ -35,7 +35,7 @@ SafeVision/
 ## Installation
 1. **Clone the Repository**:
    ```bash
-   git clone https://github.com/your-username/SafeVision.git
+   git clone https://github.com/Praveen4354/SafeVision.git
    cd SafeVision
    ```
 
